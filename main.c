@@ -5,18 +5,20 @@
 
 #define THREADS 1
 
-pthread_mutex_t threadsDisponiblesMutex;
-int threadsDisponibles = THREADS-1;
+pthread_mutex_t threadsDisponiblesMutex; // mutex d'accès à la variable partagée threadsDisponibles
+int threadsDisponibles = THREADS-1; // définit le nombre de threads disponibles
 
-struct MergeStruct{
+struct MergeStruct{ // structure de passe des données au thread
     int* tab;
     int start;
     int end;
 };
 
-void* ThdMergeSortIter(void* pointer){
-    struct MergeStruct* item = (struct MergeStruct*)pointer;
+void MergeSortIter(int* tab, int start, int end); // déclaration de la fonction de merge pour être réutilisée dans la version thread.
 
+void* ThdMergeSortIter(void* pointer){ // version thread qui rappel la fonction normale
+    struct MergeStruct* item = (struct MergeStruct*)pointer;
+    MergeSortIter(item->tab, item->start, item->end);
 }
 
 void MergeSortIter(int* tab, int start, int end){
@@ -37,7 +39,7 @@ void MergeSortIter(int* tab, int start, int end){
             struct MergeStruct item; // création de la scructure qui sera envoyée à la fonction threadée
             item.tab = tab;
             item.start = start;
-            item.end = end/2;
+            item.end = start+((end-start)/2);
             pthread_create(&thd, NULL, ThdMergeSortIter, (void*)&item); //on crée le thread sur la partie gauche du tableau
         }else{
             pthread_mutex_unlock(&threadsDisponiblesMutex);// on rend le mutex dans le cas ou il n'y a plus de threads disponibles
@@ -47,16 +49,17 @@ void MergeSortIter(int* tab, int start, int end){
         if(threaded){
             pthread_join(thd, NULL); // dans le cas où le thread a été créé, on attend qu'il termine.
         }
+        // - initialisation des variables nécessaires au réarrangement du tableau. - //
         int taille = end-start+1;
-        int iter1 = 0;
-        int iter2 = ((end-start)/2)+1;
-        int itertab = start;
-        int* tab2 = malloc(taille*sizeof(int));
-        for(int i = 0 ; i < taille ; i++){
+        int iter1 = 0; // itérateur pour la partie gauche du tableau déjà trillée
+        int iter2 = ((end-start)/2)+1; // itérateur pour la partie droite du tableau déjà trillée
+        int itertab = start; // point de départ de remise des valeurs dans le tableau principal
+        int* tab2 = malloc(taille*sizeof(int)); // allocation du tableau temporaire
+        for(int i = 0 ; i < taille ; i++){ // remplissage du tableau temporaire
             tab2[i] = tab[start+i];
         }
-        while(iter1 < ((end-start)/2)+1 && iter2 < taille){
-            if(tab2[iter1] < tab2[iter2]){
+        while(iter1 < ((end-start)/2)+1 && iter2 < taille){ // tant que l'on n'arrive pas au bout d'un tableau
+            if(tab2[iter1] < tab2[iter2]){ // test pour placer les valeurs une a une à la bonne place.
                 tab[itertab] = tab2[iter1];
                 iter1++;
             }else{
@@ -65,6 +68,7 @@ void MergeSortIter(int* tab, int start, int end){
             }
             itertab++;
         }
+        // - pour chacun des tableaux, même si un seul n'est pas fini, on termine le remplissage - //
         for (int i = iter1 ; i < ((end-start)/2)+1 ; ++i){
             tab[itertab] = tab2[i];
             itertab++;
@@ -73,19 +77,14 @@ void MergeSortIter(int* tab, int start, int end){
             tab[itertab] = tab2[i];
             itertab++;
         }
-        printf("tab %d, %d : ", start, end);
-        for (int i = start ; i <= end ; ++i){
-            printf(" %d", tab[i]);
-        }
-        printf("\n");
-        free(tab2);
+        free(tab2); // on libère la mémoire du tableau temporaire.
     }
 }
-void MergeSort(int* tab, int size){
+void MergeSort(int* tab, int size){ // initialisation du mergesort
     MergeSortIter(tab, 0, size-1);
 }
 
-#define TABTAILLE 871
+#define TABTAILLE 16
 
 int main(int argc, char** argv){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
