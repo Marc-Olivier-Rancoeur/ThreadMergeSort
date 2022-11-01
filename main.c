@@ -88,7 +88,20 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
 
 int main(int argc, char** argv){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
-    int* tab = malloc(TABTAILLE*sizeof(int));
+
+    int* tab = malloc((argc-1)*sizeof(int));
+    for (int i = 1 ; i < argc ; ++i) {
+        tab[i] = atoi(argv[i]);
+    }
+    MergeSort(tab, argc-1);
+
+    printf("tab : ");
+    for (int i = 0 ; i < argc-1 ; ++i){
+        printf(" %d", tab[i]);
+    }
+    printf("\n");
+
+    /*int* tab = malloc(TABTAILLE*sizeof(int));
     for (int i = 0 ; i < TABTAILLE ; ++i){
         tab[i] = TABTAILLE-i;
     }
@@ -102,6 +115,6 @@ int main(int argc, char** argv){
     for (int i = 0 ; i < TABTAILLE ; ++i){
         printf(" %d", tab[i]);
     }
-    printf("\n");
+    printf("\n");*/
     return 0;
 }
