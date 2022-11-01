@@ -84,8 +84,6 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
     MergeSortIter(tab, 0, size-1);
 }
 
-#define TABTAILLE 16
-
 int main(int argc, char** argv){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
 
