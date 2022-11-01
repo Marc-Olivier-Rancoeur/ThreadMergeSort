@@ -14,24 +14,38 @@ struct MergeStruct{
 };
 
 void* ThdMergeSortIter(void* pointer){
+    struct MergeStruct* item = (struct MergeStruct*)pointer;
+
 }
 
 void MergeSortIter(int* tab, int start, int end){
-    if(end-start < 3){
+    if(end-start < 3){ // si on a un tableau de 1 ou 2, on fait le trie.
         if(tab[start] > tab[end]){
-            int val = tab[start];
+            int val = tab[start]; // échange des deux valeurs dans le cas ou la valeur en premier est supérieur à la valeur en deuxième
             tab[start] = tab[end];
             tab[end] = val;
         }
     }else{
+        bool threaded = 0;
+        pthread_t thd;
         while(pthread_mutex_lock(&threadsDisponiblesMutex) != 0){}
         if(threadsDisponibles > 0){
             threadsDisponibles-=1;
+            pthread_mutex_unlock(&threadsDisponiblesMutex);
+            threaded = 1;
+            struct MergeStruct item;
+            item.tab = tab;
+            item.start = start;
+            item.end = end/2;
+            pthread_create(&thd, NULL, ThdMergeSortIter, (void*)&item);
         }else{
+            pthread_mutex_unlock(&threadsDisponiblesMutex);
             MergeSortIter(tab, start, end/2);
         }
         MergeSortIter(tab, (end/2)+1, end);
-        pthread_mutex_unlock(&threadsDisponiblesMutex);
+        if(threaded){
+            pthread_join(thd, NULL);
+        }
     }
 }
 void MergeSort(int* tab, int size){
