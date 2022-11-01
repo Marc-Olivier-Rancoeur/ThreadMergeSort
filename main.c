@@ -25,26 +25,26 @@ void MergeSortIter(int* tab, int start, int end){
             tab[start] = tab[end];
             tab[end] = val;
         }
-    }else{
-        bool threaded = 0;
+    }else{ // si le tableau est plus grand que 2
+        bool threaded = 0; // variable utilisée pour savoir si on a utilisé un thread ou pas
         pthread_t thd;
-        while(pthread_mutex_lock(&threadsDisponiblesMutex) != 0){}
-        if(threadsDisponibles > 0){
+        while(pthread_mutex_lock(&threadsDisponiblesMutex) != 0){} // on attend d'avoir le verrou sur le mutex pour avoir accès au nombre de threads disponibles
+        if(threadsDisponibles > 0){ // si il nous reste des threads disponibles
             threadsDisponibles-=1;
-            pthread_mutex_unlock(&threadsDisponiblesMutex);
+            pthread_mutex_unlock(&threadsDisponiblesMutex); // on rend immédiatement après le mutex.
             threaded = 1;
-            struct MergeStruct item;
+            struct MergeStruct item; // création de la scructure qui sera envoyée à la fonction threadée
             item.tab = tab;
             item.start = start;
             item.end = end/2;
-            pthread_create(&thd, NULL, ThdMergeSortIter, (void*)&item);
+            pthread_create(&thd, NULL, ThdMergeSortIter, (void*)&item); //on crée le thread sur la partie gauche du tableau
         }else{
-            pthread_mutex_unlock(&threadsDisponiblesMutex);
-            MergeSortIter(tab, start, end/2);
+            pthread_mutex_unlock(&threadsDisponiblesMutex);// on rend le mutex dans le cas ou il n'y a plus de threads disponibles
+            MergeSortIter(tab, start, end/2); // on lance le merge sort non parallèle sur la partie gauche
         }
-        MergeSortIter(tab, (end/2)+1, end);
+        MergeSortIter(tab, (end/2)+1, end); // on reste sur ce thread pour la partie droite.
         if(threaded){
-            pthread_join(thd, NULL);
+            pthread_join(thd, NULL); // dans le cas ou le thread a été créé, on attend qu'il termine.
         }
     }
 }
