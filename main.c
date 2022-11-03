@@ -5,6 +5,8 @@
 
 #define THREADS 1
 
+
+// - Variables globales - //
 pthread_mutex_t threadsDisponiblesMutex; // mutex d'accès à la variable partagée threadsDisponibles
 int threadsDisponibles = THREADS-1; // définit le nombre de threads disponibles
 
@@ -84,35 +86,50 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
     MergeSortIter(tab, 0, size-1);
 }
 
-int main(int argc, char** argv){
+int main(void){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
 
-    int* tab = malloc((argc-1)*sizeof(int));
-    for (int i = 1 ; i < argc ; ++i) {
-        tab[i] = atoi(argv[i]);
+    size_t len = 0;
+    ssize_t length;
+    char* line;
+    char tempTab[11];
+    int iteratorTemp = 0;
+    int iteratorLine = 0;
+    length = getline(&line, &len, stdin);
+    while(line[iteratorLine] != ' ' && iteratorLine < length) {
+        tempTab[iteratorTemp] = line[iteratorLine];
+        iteratorLine++;
+        iteratorTemp++;
     }
-    MergeSort(tab, argc-1);
+
+    tempTab[iteratorTemp] = '\0';
+    int tabSize = atoi(tempTab);
+    printf("taille tab : %d", tabSize);
+    int* tab = malloc(tabSize*sizeof(int));
+    int iteratorTab = 0;
+
+
+
+    while(iteratorLine < length && iteratorTab < tabSize){
+        iteratorTemp = 0;
+        iteratorLine++;
+        while(line[iteratorLine] != ' ' && iteratorLine < length){
+            tempTab[iteratorTemp] = line[iteratorLine];
+            iteratorLine++;
+            iteratorTemp++;
+        }
+        tempTab[iteratorTemp] = '\0';
+        tab[iteratorTab] = atoi(tempTab);
+        iteratorTab++;
+    }
+
+    MergeSort(tab, tabSize);
 
     printf("tab : ");
-    for (int i = 0 ; i < argc-1 ; ++i){
+    for (int i = 0 ; i < tabSize ; ++i){
         printf(" %d", tab[i]);
     }
     printf("\n");
-
-    /*int* tab = malloc(TABTAILLE*sizeof(int));
-    for (int i = 0 ; i < TABTAILLE ; ++i){
-        tab[i] = TABTAILLE-i;
-    }
-    printf("tab : ");
-    for (int i = 0 ; i < TABTAILLE ; ++i){
-        printf(" %d", tab[i]);
-    }
-    printf("\n");
-    MergeSort(tab, TABTAILLE);
-    printf("tab : ");
-    for (int i = 0 ; i < TABTAILLE ; ++i){
-        printf(" %d", tab[i]);
-    }
-    printf("\n");*/
+    free(tab);
     return 0;
 }
