@@ -131,7 +131,7 @@ int main(void){
     MergeSort(tab, tabSize); // application de mergesort sur le tableau initialisé
 
     // - affichage du tableau - //
-    if(tabSize < 1000) {
+    if(tabSize <= 1000) {
         for (int i = 0; i < tabSize; ++i) {
             printf("%d ", tab[i]);
         }
