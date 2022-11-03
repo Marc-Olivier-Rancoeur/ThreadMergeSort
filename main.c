@@ -5,7 +5,6 @@
 
 #define THREADS 1
 
-
 // - Variables globales - //
 pthread_mutex_t threadsDisponiblesMutex; // mutex d'accès à la variable partagée threadsDisponibles
 int threadsDisponibles = THREADS-1; // définit le nombre de threads disponibles
