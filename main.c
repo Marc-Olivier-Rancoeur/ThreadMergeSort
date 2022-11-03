@@ -126,12 +126,21 @@ int main(void){
         iteratorTab++;
     }
 
+    free(line); // libération de la mémoire le la ligne dont on n'a plus besoin
+
     MergeSort(tab, tabSize); // application de mergesort sur le tableau initialisé
 
     // - affichage du tableau - //
     if(tabSize < 1000) {
-        printf("tab : ");
         for (int i = 0; i < tabSize; ++i) {
+            printf("%d ", tab[i]);
+        }
+    }else{
+        for (int i = 0; i < 100; ++i) {
+            printf("%d ", tab[i]);
+        }
+        printf("...");
+        for (int i = tabSize-101; i < tabSize; ++i) {
             printf(" %d", tab[i]);
         }
     }
