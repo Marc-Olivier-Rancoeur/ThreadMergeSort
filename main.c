@@ -50,6 +50,7 @@ void MergeSortIter(int* tab, int start, int end){
         MergeSortIter(tab, start+((end-start)/2)+1, end); // on reste sur ce thread pour la partie droite.
         if(threaded){
             pthread_join(thd, NULL); // dans le cas où le thread a été créé, on attend qu'il termine.
+            threadsDisponibles+=1;
         }
         // - initialisation des variables nécessaires au réarrangement du tableau. - //
         int taille = end-start+1;
@@ -89,31 +90,33 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
 int main(void){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
 
+    // - variables utiles - //
     size_t len = 0;
     ssize_t length;
     char* line;
     char tempTab[11];
     int iteratorTemp = 0;
     int iteratorLine = 0;
-    length = getline(&line, &len, stdin);
-    while(line[iteratorLine] != ' ' && iteratorLine < length) {
+
+    length = getline(&line, &len, stdin); // récupération de la ligne d'entiers
+
+    while(line[iteratorLine] != ' ' && iteratorLine < length) { // boucle de récupération de la taille du tableau
         tempTab[iteratorTemp] = line[iteratorLine];
         iteratorLine++;
         iteratorTemp++;
     }
 
-    tempTab[iteratorTemp] = '\0';
+    tempTab[iteratorTemp] = '\0'; // finalisation du string pour temporaire pour la conversion.
+
+    // - initialisation du tableau - //
     int tabSize = atoi(tempTab);
-    printf("taille tab : %d", tabSize);
     int* tab = malloc(tabSize*sizeof(int));
     int iteratorTab = 0;
 
-
-
-    while(iteratorLine < length && iteratorTab < tabSize){
+    while(iteratorLine < length && iteratorTab < tabSize){ // boucle tant qu'il y a des informations à récupérer
         iteratorTemp = 0;
         iteratorLine++;
-        while(line[iteratorLine] != ' ' && iteratorLine < length){
+        while(line[iteratorLine] != ' ' && iteratorLine < length){ // boucle pour chaque nombre
             tempTab[iteratorTemp] = line[iteratorLine];
             iteratorLine++;
             iteratorTemp++;
@@ -123,11 +126,14 @@ int main(void){
         iteratorTab++;
     }
 
-    MergeSort(tab, tabSize);
+    MergeSort(tab, tabSize); // application de mergesort sur le tableau initialisé
 
-    printf("tab : ");
-    for (int i = 0 ; i < tabSize ; ++i){
-        printf(" %d", tab[i]);
+    // - affichage du tableau - //
+    if(tabSize < 1000) {
+        printf("tab : ");
+        for (int i = 0; i < tabSize; ++i) {
+            printf(" %d", tab[i]);
+        }
     }
     printf("\n");
     free(tab);
