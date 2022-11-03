@@ -20,6 +20,7 @@ void MergeSortIter(int* tab, int start, int end); // déclaration de la fonction
 void* ThdMergeSortIter(void* pointer){ // version thread qui rappel la fonction normale
     struct MergeStruct* item = (struct MergeStruct*)pointer;
     MergeSortIter(item->tab, item->start, item->end);
+    return NULL;
 }
 
 void MergeSortIter(int* tab, int start, int end){
@@ -37,7 +38,7 @@ void MergeSortIter(int* tab, int start, int end){
             threadsDisponibles-=1;
             pthread_mutex_unlock(&threadsDisponiblesMutex); // on rend immédiatement après le mutex.
             threaded = 1;
-            struct MergeStruct item; // création de la scructure qui sera envoyée à la fonction threadée
+            struct MergeStruct item; // création de la structure qui sera envoyée à la fonction threadée
             item.tab = tab;
             item.start = start;
             item.end = start+((end-start)/2);
@@ -61,7 +62,7 @@ void MergeSortIter(int* tab, int start, int end){
             tab2[i] = tab[start+i];
         }
         while(iter1 < ((end-start)/2)+1 && iter2 < taille){ // tant que l'on n'arrive pas au bout d'un tableau
-            if(tab2[iter1] < tab2[iter2]){ // test pour placer les valeurs une a une à la bonne place.
+            if(tab2[iter1] < tab2[iter2]){ // test pour placer les valeurs unes à une à la bonne place.
                 tab[itertab] = tab2[iter1];
                 iter1++;
             }else{
