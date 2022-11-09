@@ -2,12 +2,13 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <omp.h>
 
 #define TEST
 #ifdef TEST
 #include <time.h>
 #define ITERATIONS 10
-double moyenne(double tab[ITERATIONS]){
+double moyenne(const double tab[ITERATIONS]){
     double result = 0;
     for (int i = 0 ; i < ITERATIONS ; ++i){
         result+=tab[i];
@@ -17,27 +18,23 @@ double moyenne(double tab[ITERATIONS]){
 
 #endif
 
-#define THREADS 8
-
-// - Variables globales - //
-pthread_mutex_t threadsDisponiblesMutex; // mutex d'accès à la variable partagée threadsDisponibles
-int threadsDisponibles = THREADS-1; // définit le nombre de threads disponibles
+#define THREADS 2
 
 struct MergeStruct{ // structure de passe des données au thread
     int* tab;
     int start;
     int end;
+    int thditer;
 };
 
-void MergeSortIter(int* tab, int start, int end); // déclaration de la fonction de merge pour être réutilisée dans la version thread.
+void MergeSortIter(int* tab, int start, int end, int thditer); // déclaration de la fonction de merge pour être réutilisée dans la version thread.
 
 void* ThdMergeSortIter(void* pointer){ // version thread qui rappel la fonction normale
     struct MergeStruct* item = (struct MergeStruct*)pointer;
-    MergeSortIter(item->tab, item->start, item->end);
-    return NULL;
+    MergeSortIter(item->tab, item->start, item->end, item->thditer);
 }
 
-void MergeSortIter(int* tab, int start, int end){
+void MergeSortIter(int* tab, int start, int end, int thditer){
     if(end-start < 2){ // si on a un tableau de 1 ou 2, on fait le trie.
         if(tab[start] > tab[end]){
             int val = tab[start]; // échange des deux valeurs dans le cas ou la valeur en premier est supérieur à la valeur en deuxième
@@ -47,24 +44,20 @@ void MergeSortIter(int* tab, int start, int end){
     }else{ // si le tableau est plus grand que 2
         bool threaded = 0; // variable utilisée pour savoir si on a utilisé un thread ou pas
         pthread_t thd;
-        while(pthread_mutex_lock(&threadsDisponiblesMutex) != 0){} // on attend d'avoir le verrou sur le mutex pour avoir accès au nombre de threads disponibles
-        if(threadsDisponibles > 0){ // s'il nous reste des threads disponibles
-            threadsDisponibles-=1;
-            pthread_mutex_unlock(&threadsDisponiblesMutex); // on rend immédiatement après le mutex.
+        if(thditer*2 < THREADS*2){ // s'il nous reste des threads disponibles
             threaded = 1;
             struct MergeStruct item; // création de la structure qui sera envoyée à la fonction threadée
             item.tab = tab;
             item.start = start;
             item.end = start+((end-start)/2);
+            item.thditer = thditer*2;
             pthread_create(&thd, NULL, ThdMergeSortIter, (void*)&item); //on crée le thread sur la partie gauche du tableau
         }else{
-            pthread_mutex_unlock(&threadsDisponiblesMutex);// on rend le mutex dans le cas ou il n'y a plus de threads disponibles
-            MergeSortIter(tab, start, start+((end-start)/2)); // on lance le merge sort non parallèle sur la partie gauche
+            MergeSortIter(tab, start, start+((end-start)/2), thditer*2); // on lance le merge sort non parallèle sur la partie gauche
         }
-        MergeSortIter(tab, start+((end-start)/2)+1, end); // on reste sur ce thread pour la partie droite.
+        MergeSortIter(tab, start+((end-start)/2)+1, end, thditer*2+1); // on reste sur ce thread pour la partie droite.
         if(threaded){
             pthread_join(thd, NULL); // dans le cas où le thread a été créé, on attend qu'il termine.
-            threadsDisponibles+=1;
         }
         // - initialisation des variables nécessaires au réarrangement du tableau. - //
         int taille = end-start+1;
@@ -98,16 +91,16 @@ void MergeSortIter(int* tab, int start, int end){
     }
 }
 void MergeSort(int* tab, int size){ // initialisation du mergesort
-    MergeSortIter(tab, 0, size-1);
+    MergeSortIter(tab, 0, size-1, 1);
 }
 
 #ifdef TEST
 #define MIN 0
 #define MAX 1000000
 int main(void){
-    clock_t start, end;
+    double start, end;
     int* tab;
-    for (int i = 100 ; i <= 1000000 ; i*=10){
+    for (int i = 10000 ; i <= 500000 ; i+=10000){
         double resultats[ITERATIONS];
         for (int j = 0 ; j < ITERATIONS ; ++j){
             tab = malloc(i*sizeof(int));
@@ -115,13 +108,13 @@ int main(void){
                 srand(time(NULL)+rand());
                 tab[k] = (rand()%(MAX-MIN))+MIN;
             }
-            start = clock();
+            start = omp_get_wtime();
             MergeSort(tab, i);
-            end = clock();
+            end = omp_get_wtime();
             free(tab);
-            resultats[j] = (double)(end-start)/CLOCKS_PER_SEC;
+            resultats[j] = end-start;
         }
-        printf("longueur : %d, temps : %fs\n", i, moyenne(resultats));
+        printf("%d; %f\n", i, moyenne(resultats));
     }
     return 0;
 }
