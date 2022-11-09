@@ -3,7 +3,21 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define THREADS 1
+#define TEST
+#ifdef TEST
+#include <time.h>
+#define ITERATIONS 10
+double moyenne(double tab[ITERATIONS]){
+    double result = 0;
+    for (int i = 0 ; i < ITERATIONS ; ++i){
+        result+=tab[i];
+    }
+    return result/ITERATIONS;
+}
+
+#endif
+
+#define THREADS 8
 
 // - Variables globales - //
 pthread_mutex_t threadsDisponiblesMutex; // mutex d'accès à la variable partagée threadsDisponibles
@@ -87,6 +101,32 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
     MergeSortIter(tab, 0, size-1);
 }
 
+#ifdef TEST
+#define MIN 0
+#define MAX 1000000
+int main(void){
+    clock_t start, end;
+    int* tab;
+    for (int i = 100 ; i <= 1000000 ; i*=10){
+        double resultats[ITERATIONS];
+        for (int j = 0 ; j < ITERATIONS ; ++j){
+            tab = malloc(i*sizeof(int));
+            for (int k = 0 ; k < i ; ++k){
+                srand(time(NULL)+rand());
+                tab[k] = (rand()%(MAX-MIN))+MIN;
+            }
+            start = clock();
+            MergeSort(tab, i);
+            end = clock();
+            free(tab);
+            resultats[j] = (double)(end-start)/CLOCKS_PER_SEC;
+        }
+        printf("longueur : %d, temps : %fs\n", i, moyenne(resultats));
+    }
+    return 0;
+}
+
+#else
 int main(void){
     pthread_mutex_init(&threadsDisponiblesMutex, NULL);
 
@@ -148,3 +188,4 @@ int main(void){
     free(tab);
     return 0;
 }
+#endif
