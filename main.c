@@ -3,10 +3,10 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <omp.h>
 
 //#define TEST
 #ifdef TEST
+#include <omp.h>
 #include <time.h>
 #define ITERATIONS 3
 double moyenne(const double tab[ITERATIONS]){
