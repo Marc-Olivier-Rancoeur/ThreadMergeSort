@@ -1,13 +1,14 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <omp.h>
 
-#define TEST
+//#define TEST
 #ifdef TEST
 #include <time.h>
-#define ITERATIONS 10
+#define ITERATIONS 3
 double moyenne(const double tab[ITERATIONS]){
     double result = 0;
     for (int i = 0 ; i < ITERATIONS ; ++i){
@@ -18,7 +19,7 @@ double moyenne(const double tab[ITERATIONS]){
 
 #endif
 
-#define THREADS 2
+int THREADS = 2;
 
 struct MergeStruct{ // structure de passe des données au thread
     int* tab;
@@ -100,29 +101,34 @@ void MergeSort(int* tab, int size){ // initialisation du mergesort
 int main(void){
     double start, end;
     int* tab;
-    for (int i = 10000 ; i <= 500000 ; i+=10000){
-        double resultats[ITERATIONS];
-        for (int j = 0 ; j < ITERATIONS ; ++j){
-            tab = malloc(i*sizeof(int));
-            for (int k = 0 ; k < i ; ++k){
-                srand(time(NULL)+rand());
-                tab[k] = (rand()%(MAX-MIN))+MIN;
+    double resultats[ITERATIONS];
+    int thds[7] = {4,8,16,24,48};
+    printf(";4;8;16;24;48\n");
+    for (int i = 25000 ; i <= 1000000 ; i+=25000){
+        printf("%d", i);
+        for (int l = 0; l < 5; ++l) {
+            THREADS = thds[l];
+            for (int j = 0; j < ITERATIONS; ++j) {
+                tab = malloc(i * sizeof(int));
+                for (int k = 0; k < i; ++k) {
+                    srand(time(NULL) + rand());
+                    tab[k] = (rand() % (MAX - MIN)) + MIN;
+                }
+                start = omp_get_wtime();
+                MergeSort(tab, i);
+                end = omp_get_wtime();
+                free(tab);
+                resultats[j] = end - start;
             }
-            start = omp_get_wtime();
-            MergeSort(tab, i);
-            end = omp_get_wtime();
-            free(tab);
-            resultats[j] = end-start;
+            printf("; %f", moyenne(resultats));
         }
-        printf("%d; %f\n", i, moyenne(resultats));
+        printf("\n");
     }
     return 0;
 }
 
 #else
 int main(void){
-    pthread_mutex_init(&threadsDisponiblesMutex, NULL);
-
     // - variables utiles - //
     size_t len = 0;
     ssize_t length;
@@ -166,18 +172,18 @@ int main(void){
     // - affichage du tableau - //
     if(tabSize <= 1000) {
         for (int i = 0; i < tabSize; ++i) {
-            printf("%d ", tab[i]);
+            fprintf(stdout, "%d ", tab[i]);
         }
     }else{
         for (int i = 0; i < 100; ++i) {
-            printf("%d ", tab[i]);
+            fprintf(stdout, "%d ", tab[i]);
         }
-        printf("...");
+        fprintf(stdout, "...");
         for (int i = tabSize-101; i < tabSize; ++i) {
-            printf(" %d", tab[i]);
+            fprintf(stdout, " %d", tab[i]);
         }
     }
-    printf("\n");
+    fprintf(stdout, "\n");
     free(tab);
     return 0;
 }
